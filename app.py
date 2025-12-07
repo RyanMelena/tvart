@@ -1,29 +1,31 @@
 import os
+import asyncio
 import sys
 import logging
 
 from flask import Flask, Response, render_template, redirect, jsonify, request
 from samsungtvws.async_art import SamsungTVAsyncArt
 
-logging.basicConfig(level=logging.INFO)
+async def main():
+    logging.basicConfig(level=logging.INFO)
 
-app = Flask(__name__,
+    app = Flask(__name__,
         static_url_path="/",
         static_folder='build'
         )
-app.config['MAX_CONTENT_LENGTH'] = 32 * 1000 * 1000
+    app.config['MAX_CONTENT_LENGTH'] = 32 * 1000 * 1000
 
-tv_ip = os.environ.get('TV_IP') or "192.168.1.106"
-token_file = "/app/conf/token.txt"
-tv = SamsungTVAsyncArt(host=tv_ip, port=8002, token_file=token_file)
-await tv.start_listening()
+    tv_ip = os.environ.get('TV_IP') or "192.168.1.106"
+    token_file = "/app/conf/token.txt"
+    tv = SamsungTVAsyncArt(host=tv_ip, port=8002, token_file=token_file)
+    await tv.start_listening()
 
 @app.route("/")
 def index():
     return app.send_static_file('index.html')
 
 @app.route("/api/available.json")
-def list_available():
+async def list_available():
     available = await tv.available()
     available.sort(key=lambda x: x["image_date"])
     available.reverse()
@@ -45,17 +47,17 @@ def list_available():
         })
 
 @app.route("/api/select/<content_id>", methods=["POST"])
-def set_artwork(content_id):
+async def set_artwork(content_id):
     await tv.select_image(content_id)
     return jsonify({"success": True})
 
 @app.route("/api/delete/<content_id>", methods=["POST"])
-def delete_artwork(content_id):
+async def delete_artwork(content_id):
     await tv.delete(content_id)
     return jsonify({"success": True})
 
 @app.route("/api/preview/<content_id>.jpg")
-def preview(content_id):
+async def preview(content_id):
     info = await tv.available()
 
     thumbnail = await tv.get_thumbnail(content_id)
@@ -64,7 +66,7 @@ def preview(content_id):
     return response
 
 @app.route("/api/upload", methods=["POST"])
-def upload():
+async def upload():
     file = request.files['image']
     matte = request.form.get("matte")
     filename = file.filename
@@ -78,3 +80,5 @@ def upload():
 
     return redirect("/")
 
+
+asyncio.run(main())
