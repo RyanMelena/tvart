@@ -6,7 +6,7 @@ import logging
 from flask import Flask, Response, render_template, redirect, jsonify, request
 from samsungtvws.async_art import SamsungTVAsyncArt
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s %(funcName)s %(message)s', level=logging.DEBUG)
 
 app = Flask(__name__,
     static_url_path="/",
@@ -18,6 +18,7 @@ async def main():
     tv_ip = os.environ.get('TV_IP') or "192.168.1.106"
     token_file = "/app/conf/token.txt"
     global tv
+    logging.info('opening art websocket with token')
     tv = SamsungTVAsyncArt(host=tv_ip, port=8002, token_file=token_file)
     await tv.start_listening()
 
