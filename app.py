@@ -3,7 +3,7 @@ import sys
 import logging
 
 from flask import Flask, Response, render_template, redirect, jsonify, request
-from samsungtvws import SamsungTVWS
+from samsungtvws.async_art import SamsungTVAsyncArt
 
 logging.basicConfig(level=logging.INFO)
 
@@ -14,7 +14,9 @@ app = Flask(__name__,
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1000 * 1000
 
 tv_ip = os.environ.get('TV_IP') or "192.168.1.106"
-tv = SamsungTVWS(tv_ip)
+token_file = "/app/conf/token.txt"
+tv = SamsungTVAsyncArt(host=tv_ip, port=8002, token_file=token_file)
+await tv.start_listening()
 
 @app.route("/")
 def index():
@@ -22,12 +24,11 @@ def index():
 
 @app.route("/api/available.json")
 def list_available():
-    art = tv.art()
-    available = art.available()
+    available = await tv.available()
     available.sort(key=lambda x: x["image_date"])
     available.reverse()
 
-    current = art.get_current()["content_id"]
+    current = await tv.get_current()["content_id"]
 
     matte_list = [x["matte_type"] for x in art.get_matte_list()]
 
@@ -45,19 +46,19 @@ def list_available():
 
 @app.route("/api/select/<content_id>", methods=["POST"])
 def set_artwork(content_id):
-    tv.art().select_image(content_id)
+    await tv.select_image(content_id)
     return jsonify({"success": True})
 
 @app.route("/api/delete/<content_id>", methods=["POST"])
 def delete_artwork(content_id):
-    tv.art().delete(content_id)
+    await tv.delete(content_id)
     return jsonify({"success": True})
 
 @app.route("/api/preview/<content_id>.jpg")
 def preview(content_id):
-    info = tv.art().available()
+    info = await tv.available()
 
-    thumbnail = tv.art().get_thumbnail(content_id)
+    thumbnail = await tv.get_thumbnail(content_id)
     response = Response(thumbnail, mimetype='image/jpeg')
     response.cache_control.max_age = 86400
     return response
@@ -73,7 +74,7 @@ def upload():
 
     data = file.read()
 
-    tv.art().upload(data, file_type=filetype, matte=matte)
+    await tv.upload(data, file_type=filetype, matte=matte)
 
     return redirect("/")
 
