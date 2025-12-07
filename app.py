@@ -7,17 +7,9 @@ from flask import Flask, Response, render_template, redirect, jsonify, request
 from samsungtvws.async_art import SamsungTVAsyncArt
 
 async def main():
-    logging.basicConfig(level=logging.INFO)
-
-    app = Flask(__name__,
-        static_url_path="/",
-        static_folder='build'
-        )
-    app.config['MAX_CONTENT_LENGTH'] = 32 * 1000 * 1000
-
     tv_ip = os.environ.get('TV_IP') or "192.168.1.106"
     token_file = "/app/conf/token.txt"
-    tv = SamsungTVAsyncArt(host=tv_ip, port=8002, token_file=token_file)
+    global tv = SamsungTVAsyncArt(host=tv_ip, port=8002, token_file=token_file)
     await tv.start_listening()
 
 @app.route("/")
@@ -80,5 +72,12 @@ async def upload():
 
     return redirect("/")
 
+logging.basicConfig(level=logging.INFO)
+
+app = Flask(__name__,
+    static_url_path="/",
+    static_folder='build'
+    )
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1000 * 1000
 
 asyncio.run(main())
