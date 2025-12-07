@@ -9,7 +9,8 @@ from samsungtvws.async_art import SamsungTVAsyncArt
 async def main():
     tv_ip = os.environ.get('TV_IP') or "192.168.1.106"
     token_file = "/app/conf/token.txt"
-    global tv = SamsungTVAsyncArt(host=tv_ip, port=8002, token_file=token_file)
+    global tv
+    tv = SamsungTVAsyncArt(host=tv_ip, port=8002, token_file=token_file)
     await tv.start_listening()
 
 @app.route("/")
