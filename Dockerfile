@@ -14,5 +14,9 @@ RUN pip3 install -r requirements.txt
 COPY --from=node_builder build build
 COPY app.py app.py
 
-EXPOSE 8080/tcp
-CMD [ "waitress-serve", "--port=8080", "app:app" ]
+# Define an environment variable for the port with a default value
+ENV PORT=8080
+
+EXPOSE ${PORT}/tcp
+
+CMD [ "waitress-serve", "--port=$(PORT)", "app:app" ]
